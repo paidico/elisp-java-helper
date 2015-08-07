@@ -87,3 +87,4 @@
 	  (progn
 	    (goto-char (match-beginning 0))
 	    (newline))))))
+(provide 'java-helper)
