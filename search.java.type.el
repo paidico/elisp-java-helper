@@ -1,4 +1,14 @@
 
+;; depend on s.el
+
+(defun re-apply-default-grep-find-cmd ()
+  "Setting back default grep-find command"
+  (progn
+    (grep-apply-setting
+     'grep-find-command
+     (cons "find . -type f -exec grep --color -nHZ -e  \\{\\} +" 43))  
+    ))
+
 (defun redefine-find-cmd (find-compl position)
   "Redefine find default com sufixo FIND-COMPL e POSITION"
   (let ((cur-grep-find-command grep-find-command)
@@ -25,39 +35,35 @@
 
 (defun busca-java-type (command-args)
   "Busca tipos java por COMMAND-ARGS"
-    (interactive
-     (progn
-       (redefine-find-cmd
-	" -name '*.java' -type f -exec grep --color -nH --null -E '\\b(class|interface|enum)\\s+' \\{\\} +"
-	91)
-       (list (read-shell-command "Run: "
-				 grep-find-command 'grep-find-history))
-       ))
-    (when command-args
-      (let ((null-device nil))
-	(grep command-args)))
-    (grep-apply-setting
-     'grep-find-command
-     (cons "find . -type f -exec grep --color -nHZ -e  \\{\\} +" 43))
-    )
+  (interactive
+   (progn
+     (redefine-find-cmd
+      " -name '*.java' -type f -exec grep --color -nH --null -E '\\b(class|interface|enum)\\s+' \\{\\} +"
+      91)
+     (list (read-shell-command "Run: "
+			       grep-find-command 'grep-find-history))
+     ))
+  (when command-args
+    (let ((null-device nil))
+      (grep command-args)))
+   (re-apply-default-grep-find-cmd)
+  )
 
 (defun busca-java-extensions (command-args)
   "Busca tipos java herdados por COMMAND-ARGS"
-    (interactive
-     (progn
-       (redefine-find-cmd
-	" -name '*.java' -type f -exec grep -ZzlP '\\b(extends|implements)\\b[^{]+\\b\\b.*{' \\{\\} + | sed 's/\\x0/:1:found\\n/g'"
-	79)
-       (list (read-shell-command "Run: "
-				 grep-find-command 'grep-find-history))
-       ))
-    (when command-args
-      (let ((null-device nil))
-	(grep command-args)))
-    (grep-apply-setting
-     'grep-find-command
-     (cons "find . -type f -exec grep --color -nHZ -e  \\{\\} +" 43))
-    )
+  (interactive
+   (progn
+     (redefine-find-cmd
+      " -name '*.java' -type f -exec grep -ZzlP '\\b(extends|implements)\\b[^{]+\\b\\b.*{' \\{\\} + | xargs grep --color -nHZ -E '\\b(class|interface|enum)\\b'"
+      79)
+     (list (read-shell-command "Run: "
+			       grep-find-command 'grep-find-history))
+     ))
+  (when command-args
+    (let ((null-device nil))
+      (grep command-args)))
+  (re-apply-default-grep-find-cmd)
+  )
 
 (provide 'busca-java-type)
 (provide 'busca-java-extensions)
