@@ -1,39 +1,40 @@
 
-(defun djson-format-text-tokenize (ini fim)
-  "Tokeniza para valores entre aspas de INI ate FIM"
+(defun djson-format-text-tokenize ()
+  "Tokeniza para valores entre aspas no buffer"
   (let ((tokens (list)))
-    (goto-char ini)
-    (while (search-forward "\\\"" fim t)
-      (replace-match "#_quote-tokenized_#"))
-    (goto-char ini)
-    (while (re-search-forward
-	    "\\(\"[^\"]+\"\\)\\s-*:\\s-*\\(\"[^\"]*\"\\)"
-	    fim t)
-      (let* ((orig-key (match-string 1))
-	     (orig-value (match-string 2)))
-	(replace-match (concat orig-key ": #_text-tokenized_#"))
-	(push orig-value tokens)
-	))
+    (save-excursion
+      (goto-char (point-min))
+      (while (search-forward "\\\"" (point-max) t)
+	(replace-match "#_quote-tokenized_#"))
+      (goto-char (point-min))
+      (while (re-search-forward
+	      "\\(\"[^\"]+\"\\)\\s-*:\\s-*\\(\"[^\"]*\"\\)"
+	      (point-max) t)
+	(let* ((orig-key (match-string 1))
+	       (orig-value (match-string 2)))
+	  (replace-match (concat orig-key ": #_text-tokenized_#"))
+	  (push orig-value tokens)
+	  )))
     (reverse tokens))
   )
 
-(defun djson-format-text-detokenize (tokens ini fim)
-  "Substitui TOKENS de valores entre aspas de INI ate FIM"
-  (progn
-    (goto-char ini)
-    (while (search-forward "#_text-tokenized_#" fim t)
+(defun djson-format-text-detokenize (tokens)
+  "Substitui TOKENS de valores entre aspas no buffer"
+  (save-excursion
+    (goto-char (point-min))
+    (while (search-forward "#_text-tokenized_#" (point-max) t)
       (let* ((orig-value (pop tokens)))
 	(replace-match orig-value)
 	))
-    (goto-char ini)
-    (while (search-forward "#_quote-tokenized_#" fim t)
+    (goto-char (point-min))
+    (while (search-forward "#_quote-tokenized_#" (point-max) t)
       (replace-match "\\\\\""))
     )
   )
 
 (defun djson-format-remove-break-ln (ini fim)
   "Limpa quebra de linhas e tabs entre INI e FIM"
-  (progn
+  (save-excursion
     (goto-char ini)
     (while (re-search-forward "\\s-*\n\\s-*" fim t)
       (replace-match ""))
@@ -43,7 +44,7 @@
 
 (defun djson-format-square-brackets (ini fim)
   "Formata colchetes entre INI e FIM"
-  (progn
+  (save-excursion
     (goto-char ini)
     (while (re-search-forward "\\s-*[[]\\s-*" fim t)
       (replace-match "[\n"))
@@ -58,7 +59,7 @@
 
 (defun djson-format-curly-brackets (ini fim)
   "Formata chaves entre INI e FIM"
-  (progn
+  (save-excursion
     (goto-char ini)
     (while (re-search-forward "\\s-*{\\s-*" fim t)
       (replace-match "{\n"))
@@ -73,7 +74,7 @@
 
 (defun djson-format-comma (ini fim)
   "Formata virgula entre INI e FIM"
-  (progn
+  (save-excursion
     (goto-char ini)
     (while (re-search-forward "\\s-*,\\s-*" fim t)
       (replace-match ",\n"))
@@ -82,7 +83,7 @@
 
 (defun djson-format-colon (ini fim)
   "Formata dois pontos entre INI e FIM"
-  (progn
+  (save-excursion
     (goto-char ini)
     (while (re-search-forward "\\s-*:\\s-*" fim t)
       (replace-match ": "))
@@ -102,12 +103,12 @@
 	    (setq fim-mark (copy-marker (max ini fim)))
 	    ))
       (djson-format-remove-break-ln ini-mark fim-mark)
-      (setq tokens (djson-format-text-tokenize ini-mark fim-mark))
+      (setq tokens (djson-format-text-tokenize))
       (djson-format-square-brackets ini-mark fim-mark)
       (djson-format-curly-brackets ini-mark fim-mark)
       (djson-format-comma ini-mark fim-mark)
       (djson-format-colon ini-mark fim-mark)
-      (djson-format-text-detokenize tokens ini-mark fim-mark)
+      (djson-format-text-detokenize tokens)
       (indent-region ini-mark fim-mark)
       (untabify ini-mark fim-mark)
       ))
@@ -145,8 +146,7 @@
     (save-excursion
       (setq opening-symbols (list square-bracket-open-symbol curly-bracket-open-symbol))
       (setq closing-symbols (list square-bracket-close-symbol curly-bracket-close-symbol))
-      (save-excursion
-	(setq tokens (djson-format-text-tokenize (point-min) (point-max))))
+      (setq tokens (djson-format-text-tokenize))
 
       (while (not (member (char-after) opening-symbols))
 	(forward-char))
@@ -170,7 +170,7 @@
 		(djson-unformat start-mark (point)))
 	    )
 	)
-      (djson-format-text-detokenize tokens (point-min) (point-max))
+      (djson-format-text-detokenize tokens)
       )
     )
   )
